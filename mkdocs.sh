@@ -29,7 +29,9 @@ doc() {
 	COMMIT_HASH=`git rev-parse HEAD`
 	popd
 	pushd $3/$2
-	echo "<!doctype html><html><body><p>Updated: `date -u`</p><p>Hash: ${COMMIT_HASH}</p></body></html>" > meta.html
+	NOW=`date -u`
+	echo "<!doctype html><html><body><p>Updated: ${NOW}</p><p>Hash: ${COMMIT_HASH}</p></body></html>" > meta.html
+	echo "Updated: ${NOW}\nHash ${COMMIT_HAHS}" > meta.txt
 	popd
 }
 
