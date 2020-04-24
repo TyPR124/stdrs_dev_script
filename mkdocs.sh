@@ -68,5 +68,5 @@ rustup target add x86_64-unknown-linux-gnu
 doc rust x86_64-pc-windows-gnu docs/nightly
 doc rust x86_64-unknown-linux-gnu docs/nightly
 
-gsutil rsync -m -r -d docs/nightly/x86_64-pc-windows-gnu gs://stdrs-dev-docs/nightly/x86_64-pc-windows-gnu
-gsutil rsync -m -r -d docs/nightly/x86_64-unknown-linux-gnu gs://stdrs-dev-docs/nightly/x86_64-unknown-linux-gnu
+gsutil -m rsync -r -d docs/nightly/x86_64-pc-windows-gnu gs://stdrs-dev-docs/nightly/x86_64-pc-windows-gnu
+gsutil -m rsync -r -d docs/nightly/x86_64-unknown-linux-gnu gs://stdrs-dev-docs/nightly/x86_64-unknown-linux-gnu
