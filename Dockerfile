@@ -16,14 +16,11 @@ RUN apt-get install -y --no-install-recommends \
     apt-transport-https ca-certificates gnupg python3.8
 
 # Setup rust tools
-ENV RUSTUP_HOME=~/rustup
-ENV CARGO_HOME=~/cargo
-ENV PATH=~/cargo/bin:~/rustup/bin:$PATH
+ENV RUSTUP_HOME=/rustup
+ENV CARGO_HOME=/cargo
+ENV PATH=/cargo/bin:/rustup/bin:$PATH
 
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path
-RUN rustup toolchain install nightly
-RUN rustup target add x86_64-unknown-linux-gnu
-RUN rustup target add x86_64-pc-windows-gnu
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path --default-toolchain none
 
 # Install gsutil
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
