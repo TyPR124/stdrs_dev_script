@@ -32,9 +32,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends google-cloud-sd
 COPY gcloud_keyfile.json gcloud_keyfile.json
 RUN gcloud auth activate-service-account --key-file ./gcloud_keyfile.json && rm ./gcloud_keyfile.json
 
-# Final git sync and copy our stuff
-RUN cd rust && git checkout master && git pull && git submodule update --init --recursive
+# Copy our stuff
 COPY mkdocs.sh mkdocs.sh
+RUN chmod 550 ./mkdocs.sh
+
+# Final git sync
+RUN cd rust && git checkout master && git pull && git submodule update --init --recursive
 
 # Cleanup
 RUN apt-get clean
