@@ -16,9 +16,9 @@ RUN apt-get install -y --no-install-recommends \
     apt-transport-https ca-certificates gnupg python3.8
 
 # Setup rust tools
-ENV RUSTUP_HOME=/rustup
-ENV CARGO_HOME=/cargo
-ENV PATH=/cargo/bin:/rustup/bin:$PATH
+ENV RUSTUP_HOME=~/rustup
+ENV CARGO_HOME=~/cargo
+ENV PATH=~/cargo/bin:~/rustup/bin:$PATH
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path
 RUN rustup toolchain install nightly
