@@ -29,9 +29,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends google-cloud-sd
 COPY gcloud_keyfile.json gcloud_keyfile.json
 RUN gcloud auth activate-service-account --key-file ./gcloud_keyfile.json && rm ./gcloud_keyfile.json
 
-RUN apt-get -y --no-install-recommends install gcc python-dev python-setuptools
-RUN pip uninstall crcmod && \
-    pip install --no-cache-dir -U crcmod
+RUN apt-get -y --no-install-recommends install gcc python-dev python-setuptools python-pip
+RUN pip install --no-cache-dir -U crcmod
 
 # Copy our stuff
 COPY mkdocs.sh mkdocs.sh
