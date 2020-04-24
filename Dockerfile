@@ -22,12 +22,16 @@ ENV PATH=/cargo/bin:/rustup/bin:$PATH
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path --default-toolchain none
 
-# Install gsutil
+# Install gsutil w/ crc32c
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
 RUN apt-get update && apt-get install -y --no-install-recommends google-cloud-sdk
 COPY gcloud_keyfile.json gcloud_keyfile.json
 RUN gcloud auth activate-service-account --key-file ./gcloud_keyfile.json && rm ./gcloud_keyfile.json
+
+RUN apt-get -y --no-install-recommends install gcc python-dev python-setuptools
+RUN pip uninstall crcmod && \
+    pip install --no-cache-dir -U crcmod
 
 # Copy our stuff
 COPY mkdocs.sh mkdocs.sh

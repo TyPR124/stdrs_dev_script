@@ -59,10 +59,10 @@ popd
 pushd docs/nightly
 popd
 
-rustup target add x86_64-pc-windows-msvc
+rustup target add x86_64-pc-windows-gnu
 rustup target add x86_64-unknown-linux-gnu
 
-doc rust x86_64-pc-windows-msvc docs/nightly
+doc rust x86_64-pc-windows-gnu docs/nightly
 doc rust x86_64-unknown-linux-gnu docs/nightly
 
-gsutil rsync -r -d docs/nightly gs://stdrs-dev-docs/nightly
+gsutil rsync -m -r -d docs/nightly gs://stdrs-dev-docs/nightly
