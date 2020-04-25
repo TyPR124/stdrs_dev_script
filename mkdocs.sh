@@ -14,6 +14,10 @@ pre_exit() {
 	if [ $code -ne 0 ]; then
 		echo "Ended with error ${code} on line ${last_line}: '${last_cmd}'"
 	fi
+
+	if [[ -n $SHUTDOWN_VM_ZONE && -n $SHUTDOWN_VM_NAME ]]; then
+		gcloud compute instances stop $SHUTDOWN_VM_NAME --async --zone $SHUTDOWN_VM_ZONE
+	fi
 }
 
 update_docs() {
@@ -111,11 +115,10 @@ if [ $status -ne 0 ]; then
 	source ~/.profile
 fi
 
-# Update rustc (also maybe install missing components, requiring profile reload)
+# Update rustc, install necessary toolchains
 rustup toolchain install nightly --profile minimal -c cargo -c rustc -c rust-docs
 rustup target add x86_64-pc-windows-gnu
 rustup target add x86_64-unknown-linux-gnu
-source ~/.profile
 
 NIGHTLY_HASH="$(rustc +nightly --version --verbose | grep commit-hash: | sed -r -e 's/commit-hash: ([0-9a-z]+)/\1/')"
 echo "Nightly hash is ${NIGHTLY_HASH}"
@@ -133,15 +136,14 @@ git submodule update --init --recursive
 popd
 
 # Make sure docs dir exists
-set +e
-mkdir docs
-mkdir docs/nightly
-set -e
-pushd docs/nightly
-popd
+# set +e
+# mkdir docs
+# mkdir docs/nightly
+# set -e
+# pushd docs/nightly
+# popd
 
+update_docs rust x86_64-unknown-linux-gnu gs://stdrs-dev-docs/nightly
 update_docs rust x86_64-pc-windows-gnu gs://stdrs-dev-docs/nightly
-# doc rust x86_64-unknown-linux-gnu gs://stdrs-dev-docs/nightly
 
-#gsutil -m rsync -r -d docs/nightly/x86_64-pc-windows-gnu gs://stdrs-dev-docs/nightly/x86_64-pc-windows-gnu
-#gsutil -m rsync -r -d docs/nightly/x86_64-unknown-linux-gnu gs://stdrs-dev-docs/nightly/x86_64-unknown-linux-gnu
+exit 0
