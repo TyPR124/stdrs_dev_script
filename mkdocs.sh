@@ -37,7 +37,7 @@ update_docs() {
 	popd
 	echo "Current hash is ${COMMIT_HASH}"
 	
-	if [ $LAST_HASH == $COMMIT_HASH ]; then
+	if [ "$LAST_HASH" == "$COMMIT_HASH" ]; then
 		echo "Hash not changed, skipping ${target}"
 		return 0
 	fi
@@ -91,12 +91,24 @@ if [ "$SELF_HASH" != "$SELF_UPDATE_HASH" ]; then
 	set +e
 	"${BASH_SOURCE[0]}"
 	exit $?
+	set -e # unreachable, but I like the set +/- symmetry
 fi
 
 echo "Passed script update, running rev: ${SELF_HASH}"
 
-# Update rustc
+# Check for rustup
+set +e
+rustup help > /dev/null
+status=$?
+set -e
+if [ $status -ne 0 ]; then
+	curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly --profile minimal
+	source ~/.profile
+fi
+
+# Update rustc (also maybe install missing components, requiring profile reload)
 rustup toolchain install nightly --profile minimal -c cargo -c rustc -c rust-docs
+source ~/.profile
 
 NIGHTLY_HASH="$(rustc +nightly --version --verbose | grep commit-hash: | sed -r -e 's/commit-hash: ([0-9a-z]+)/\1/')"
 echo "Nightly hash is ${NIGHTLY_HASH}"
