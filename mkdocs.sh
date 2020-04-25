@@ -135,7 +135,7 @@ set -e
 pushd docs/nightly
 popd
 
-doc rust x86_64-pc-windows-gnu gs://stdrs-dev-docs/nightly
+update_docs rust x86_64-pc-windows-gnu gs://stdrs-dev-docs/nightly
 # doc rust x86_64-unknown-linux-gnu gs://stdrs-dev-docs/nightly
 
 #gsutil -m rsync -r -d docs/nightly/x86_64-pc-windows-gnu gs://stdrs-dev-docs/nightly/x86_64-pc-windows-gnu
