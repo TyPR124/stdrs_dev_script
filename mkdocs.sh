@@ -84,14 +84,16 @@ SELF_UPDATE_HASH="$(git rev-parse HEAD)"
 # echo "Current script rev: ${SELF_HASH}"
 # echo "Updated script rev: ${SELF_UPDATE_HASH}"
 popd
-if [ $SELF_HASH != $SELF_UPDATE_HASH ]; then
+if [ "$SELF_HASH" != "$SELF_UPDATE_HASH" ]; then
 	echo "Current script rev: ${SELF_HASH}"
 	echo "Updated script rev: ${SELF_UPDATE_HASH}"
-	echo "Restarting with updated self"
+	echo "Restarting with updated script"
 	set +e
 	"${BASH_SOURCE[0]}"
 	exit $?
 fi
+
+echo "Passed script update, running rev: ${SELF_HASH}"
 
 # Update rustc
 rustup toolchain install nightly --profile minimal -c cargo -c rustc -c rust-docs
