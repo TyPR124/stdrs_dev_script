@@ -28,7 +28,7 @@ update_docs() {
 	# Get last Hash: value from $docs/$target/meta.txt
 	set +e # meta.txt might not exist
 	# local LAST_HASH="$(grep Hash: < $docs/$target/meta.txt | sed -r -e 's/Hash: ([0-9A-Za-z]+)/\1/')"
-	local LAST_HASH="$(gsutil cat ${gs_base}/meta.txt | grep Hash: | sed -r -e 's/Hash: ([0-9A-Za-z]+)/\1/')"
+	local LAST_HASH="$(gsutil cat ${gs_base}/${target}/meta.txt | grep Hash: | sed -r -e 's/Hash: ([0-9A-Za-z]+)/\1/')"
 	set -e
 	echo "Last hash was ${LAST_HASH}"
 
@@ -72,7 +72,7 @@ update_docs() {
 		return $status
 	fi
 
-	printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" | gsutil cp -I $gs_base/meta.txt
+	printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" | gsutil cp -I $gs_base/$target/meta.txt
 }
 
 # Update self
