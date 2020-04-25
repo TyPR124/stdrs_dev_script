@@ -64,8 +64,11 @@ update_docs() {
 	# printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" > meta.txt
 	# popd
 
+	echo "Beginning sync docs for ${target}"
+	echo "This can take some time..."
+
 	set +e
-	gsutil --quiet -m rsync -r -d -C $rust/target/$target/doc $gs_base/$target
+	gsutil -q -m rsync -r -d -C $rust/target/$target/doc $gs_base/$target
 	local status=$?
 	set -e
 	if [ $status -ne 0 ]; then
@@ -73,7 +76,8 @@ update_docs() {
 	fi
 	echo "Docs synced for ${target}"
 	echo "Updating meta.txt"
-	printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" | gsutil cp -I $gs_base/$target/meta.txt
+	printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" > meta.txt
+	gsutil cp meta.txt $gs_base/$target/meta.txt
 }
 
 # Update self
