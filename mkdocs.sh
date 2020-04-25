@@ -75,6 +75,20 @@ update_docs() {
 	printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" | gsutil cp -I $gs_base/meta.txt
 }
 
+# Update self
+SELF_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+pushd $SELF_DIR
+SELF_HASH="$(git rev-parse HEAD)"
+git pull
+SELF_UPDATE_HASH="$(git rev-parse HEAD)"
+popd
+if [ SELF_HASH != SELF_UPDATE_HASH ]; then
+	echo "Restarting with updated self"
+	set +e
+	"${BASH_SOURCE[0]}"
+	exit $?
+fi
+
 # Update rustc
 rustup toolchain install nightly --profile minimal -c cargo -c rustc -c rust-docs
 
