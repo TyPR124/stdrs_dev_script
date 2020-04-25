@@ -108,6 +108,8 @@ fi
 
 # Update rustc (also maybe install missing components, requiring profile reload)
 rustup toolchain install nightly --profile minimal -c cargo -c rustc -c rust-docs
+rustup target add x86_64-pc-windows-gnu
+rustup target add x86_64-unknown-linux-gnu
 source ~/.profile
 
 NIGHTLY_HASH="$(rustc +nightly --version --verbose | grep commit-hash: | sed -r -e 's/commit-hash: ([0-9a-z]+)/\1/')"
@@ -132,9 +134,6 @@ mkdir docs/nightly
 set -e
 pushd docs/nightly
 popd
-
-rustup target add x86_64-pc-windows-gnu
-rustup target add x86_64-unknown-linux-gnu
 
 doc rust x86_64-pc-windows-gnu gs://stdrs-dev-docs/nightly
 # doc rust x86_64-unknown-linux-gnu gs://stdrs-dev-docs/nightly
