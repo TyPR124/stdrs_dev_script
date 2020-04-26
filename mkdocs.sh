@@ -31,7 +31,6 @@ update_docs() {
 
 	# Get last Hash: value from $docs/$target/meta.txt
 	set +e # meta.txt might not exist
-	# local LAST_HASH="$(grep Hash: < $docs/$target/meta.txt | sed -r -e 's/Hash: ([0-9A-Za-z]+)/\1/')"
 	local LAST_HASH="$(gsutil cat ${gs_base}/${target}/meta.txt | grep Hash: | sed -r -e 's/Hash: ([0-9A-Za-z]+)/\1/')"
 	set -e
 	echo "Last hash was ${LAST_HASH}"
@@ -63,7 +62,7 @@ update_docs() {
 	# mv $rust/target/$target/doc $docs/$target
 	
 	# pushd $docs/$target
-	# local NOW=`date -u`
+	# 
 	# printf "<!doctype html><html><body><p>Updated: ${NOW}</p><p>Hash: ${COMMIT_HASH}</p></body></html>" > meta.html
 	# printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" > meta.txt
 	# popd
@@ -80,6 +79,7 @@ update_docs() {
 	fi
 	echo "Docs synced for ${target}"
 	echo "Updating meta.txt"
+	local NOW=`date -u`
 	printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" > meta.txt
 	gsutil cp meta.txt $gs_base/$target/meta.txt
 }
