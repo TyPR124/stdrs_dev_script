@@ -114,9 +114,10 @@ if [ $status -ne 0 ]; then
 	export RUSTUP_HOME=/rustup
 	export CARGO_HOME=/cargo
 	export PATH=/cargo/bin:/rustup/bin:$PATH
-	set -e
+	set +e
 	rustup help > /dev/null
 	status=$?
+	set -e
 	if [ $status -ne 0]; then
 		curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly --profile minimal
 		# source ~/.profile
