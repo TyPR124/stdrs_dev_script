@@ -118,7 +118,7 @@ if [ $status -ne 0 ]; then
 	rustup help > /dev/null
 	status=$?
 	set -e
-	if [ $status -ne 0]; then
+	if [ $status -ne 0 ]; then
 		curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly --profile minimal
 		# source ~/.profile
 	fi
