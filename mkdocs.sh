@@ -45,6 +45,7 @@ update_docs() {
 		return 0
 	fi
 
+	echo "Began documenting ${target} at `date -u`"
 	pushd $rust/src/libstd
 	set +e
 	RUSTDOCFLAGS='-Z unstable-options --document-hidden-items --document-private-items' cargo +nightly doc --target $target
@@ -54,18 +55,7 @@ update_docs() {
 	if [ $status -ne 0 ]; then
 		return $status
 	fi
-	
-	# set +e
-	# rm -rf $docs/$target
-	# set -e
-	
-	# mv $rust/target/$target/doc $docs/$target
-	
-	# pushd $docs/$target
-	# 
-	# printf "<!doctype html><html><body><p>Updated: ${NOW}</p><p>Hash: ${COMMIT_HASH}</p></body></html>" > meta.html
-	# printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" > meta.txt
-	# popd
+	echo "Finished documenting ${target} at `date -u`"
 
 	echo "Beginning sync docs for ${target}"
 	echo "This can take some time..."
@@ -74,14 +64,17 @@ update_docs() {
 	gsutil -q -m rsync -r -d -C $rust/target/$target/doc $gs_base/$target
 	local status=$?
 	set -e
+	echo "Finished sync docs for ${target} at `date -u`"
 	if [ $status -ne 0 ]; then
+		echo "But there was an error!"
 		return $status
 	fi
-	echo "Docs synced for ${target}"
-	echo "Updating meta.txt"
+
+	# Update meta.txt last
 	local NOW=`date -u`
 	printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" > meta.txt
 	gsutil cp meta.txt $gs_base/$target/meta.txt
+	echo "Updated meta.txt for ${target}"
 }
 
 # Update self
@@ -90,8 +83,6 @@ pushd $SELF_DIR
 SELF_HASH="$(git rev-parse HEAD)"
 git pull
 SELF_UPDATE_HASH="$(git rev-parse HEAD)"
-# echo "Current script rev: ${SELF_HASH}"
-# echo "Updated script rev: ${SELF_UPDATE_HASH}"
 popd
 if [ "$SELF_HASH" != "$SELF_UPDATE_HASH" ]; then
 	echo "Current script rev: ${SELF_HASH}"
@@ -144,15 +135,25 @@ git checkout $NIGHTLY_HASH
 git submodule update --init --recursive
 popd
 
-# Make sure docs dir exists
-# set +e
-# mkdir docs
-# mkdir docs/nightly
-# set -e
-# pushd docs/nightly
-# popd
+ERR_COUNT=0
 
-update_docs rust x86_64-unknown-linux-gnu gs://stdrs-dev-docs/nightly
-update_docs rust x86_64-pc-windows-gnu gs://stdrs-dev-docs/nightly
+try_update_docs() {
+	set +e
+	update_docs $1 $2 $3
+	local status=$?
+	set -e
+
+	if [ $status -ne 0 ]; then
+		ERR_COUNT=$(($ERR_COUNT + 1))
+		echo "Failed to run 'update_docs ${1} ${2} ${3}', error code ${status}"
+	fi
+}
+try_update_docs rust x86_64-unknown-linux-gnu	gs://stdrs-dev-docs/nightly
+try_update_docs rust x86_64-pc-windows-gnu		gs://stdrs-dev-docs/nightly
+
+if [ $ERR_COUNT -ne 0 ]; then
+	echo "Failed to update docs for ${ERR_COUNT} targets!"
+	exit 1
+fi
 
 exit 0
