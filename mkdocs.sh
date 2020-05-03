@@ -129,9 +129,8 @@ git clone https://github.com/rust-lang/rust
 set -e
 
 pushd rust
-git checkout master --force
-git pull
-git checkout $NIGHTLY_HASH --force
+git fetch --all
+git reset --hard $NIGHTLY_HASH
 git submodule update --init --recursive --force
 popd
 
