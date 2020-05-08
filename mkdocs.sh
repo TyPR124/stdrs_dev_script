@@ -61,7 +61,7 @@ update_docs() {
 	echo "This can take some time..."
 
 	set +e
-	gsutil -q -m rsync -r -d -C $rust/target/$target/doc $gs_base/$target
+	gsutil -q -m rsync -r -d -c -C $rust/target/$target/doc $gs_base/$target
 	local status=$?
 	set -e
 	echo "Finished sync docs for ${target} at `date -u`"
