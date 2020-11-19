@@ -46,7 +46,7 @@ update_docs() {
 	fi
 
 	echo "Began documenting ${target} at `date -u`"
-	pushd $rust/src/libstd
+	pushd $rust/library/std
 	set +e
 	RUSTDOCFLAGS='-Z unstable-options --document-hidden-items --document-private-items' cargo +nightly doc --target $target
 	local status=$?
