@@ -114,7 +114,7 @@ if [ $status -ne 0 ]; then
 	fi
 fi
 
-# Update rustc, install necessary toolchains
+# Update rustc, install necessary components and toolchains
 rustup toolchain install nightly --profile minimal -c cargo -c rustc -c rust-docs
 rustup target add x86_64-pc-windows-gnu
 rustup target add x86_64-unknown-linux-gnu
