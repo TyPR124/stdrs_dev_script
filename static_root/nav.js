@@ -24,7 +24,7 @@ function init_target_select() {
     target_select.className = location.className;
     target_select.onchange = () => {
         var new_target = target_select.value;
-        window.location.href = "nightly/" + new_target + "/std/index.html";
+        window.location.href = "/nightly/" + new_target + "/std/index.html";
     };
     sidebar.insertBefore(target_select, location);
 }

@@ -2,7 +2,7 @@
 <html>
   <script>
     var desired_target = window.localStorage.getItem('last_viewed_target') || "x86_64-unknown-linux-gnu";
-    window.location.replace("nightly/" + desired_target + "/std/index.html");
+    window.location.replace("/nightly/" + desired_target + "/std/index.html");
   </script>
-  <noscript><meta http-equiv="refresh" content="0; nightly/x86_64-unknown-linux-gnu/std/index.html" /></noscript>
+  <noscript><meta http-equiv="refresh" content="0; /nightly/x86_64-unknown-linux-gnu/std/index.html" /></noscript>
 </html>
