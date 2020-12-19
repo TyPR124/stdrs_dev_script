@@ -44,31 +44,20 @@ update_docs() {
 		echo "Hash not changed, skipping ${target}"
 		return 0
 	fi
+	SELF_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 	echo "Began documenting ${target} at `date -u`"
-	pushd $rust/library/std
-	set +e
-	RUSTDOCFLAGS='-Z unstable-options --document-hidden-items --document-private-items' cargo +nightly doc --target $target
-	local status=$?
-	set -e
-	popd
-	if [ $status -ne 0 ]; then
-		return $status
-	fi
+	RDF_UNSTABLE="-Z unstable-options --document-hidden-items"
+	# Note: SELF_DIR is expected to be assigned before update_docs() is called
+	RDF_STABLE="--document-private-items --crate-version ${COMMIT_HASH:0:7} --html-in-header ${SELF_DIR}/in-head.html"
+	export RUSTDOCFLAGS="${RDF_STABLE} ${RDF_UNSTABLE}"
+	cargo +nightly doc --target $target --manifest-path $rust/library/std/Cargo.toml
 	echo "Finished documenting ${target} at `date -u`"
 
 	echo "Beginning sync docs for ${target}"
 	echo "This can take some time..."
-
-	set +e
 	gsutil -q -m rsync -r -d -C $rust/target/$target/doc $gs_base/$target
-	local status=$?
-	set -e
 	echo "Finished sync docs for ${target} at `date -u`"
-	if [ $status -ne 0 ]; then
-		echo "But there was an error!"
-		return $status
-	fi
 
 	# Update meta.txt last
 	local NOW=`date -u`
@@ -93,10 +82,10 @@ if [ "$SELF_HASH" != "$SELF_UPDATE_HASH" ]; then
 	exit $?
 	set -e # unreachable, but I like the set +/- symmetry
 fi
-
 echo "Passed script update, running rev: ${SELF_HASH}"
 
-# Check for rustup
+# Check for or install rustup
+# Assumes that if rustup exists, cargo and rustc exist as well
 set +e
 rustup help > /dev/null
 status=$?
@@ -118,11 +107,14 @@ fi
 rustup toolchain install nightly --profile minimal -c cargo -c rustc -c rust-docs
 rustup target add x86_64-pc-windows-gnu
 rustup target add x86_64-unknown-linux-gnu
+rustup target add x86_64-apple-darwin
 
+# Determine the commit-hash of this nightly rustc
 NIGHTLY_HASH="$(rustc +nightly --version --verbose | grep commit-hash: | sed -r -e 's/commit-hash: ([0-9a-z]+)/\1/')"
 echo "Nightly hash is ${NIGHTLY_HASH}"
 
-# Ignore errors here (likely that rust is already cloned)
+# Get rust repo, find commit where this rustc was built
+# Ignore clone errors, possibly already cloned
 set +e
 git clone https://github.com/rust-lang/rust
 set -e
@@ -133,25 +125,9 @@ git reset --hard $NIGHTLY_HASH
 git submodule update --init --recursive --force
 popd
 
-ERR_COUNT=0
+# Sync static root content (NOTE: do NOT enable -r with -d)
+gsutil -q rsync -d -C static_root/ gs://stdrs-dev-docs
 
-try_update_docs() {
-	set +e
-	update_docs $1 $2 $3
-	local status=$?
-	set -e
-
-	if [ $status -ne 0 ]; then
-		ERR_COUNT=$(($ERR_COUNT + 1))
-		echo "Failed to run 'update_docs ${1} ${2} ${3}', error code ${status}"
-	fi
-}
-try_update_docs rust x86_64-unknown-linux-gnu	gs://stdrs-dev-docs/nightly
-try_update_docs rust x86_64-pc-windows-gnu		gs://stdrs-dev-docs/nightly
-
-if [ $ERR_COUNT -ne 0 ]; then
-	echo "Failed to update docs for ${ERR_COUNT} targets!"
-	exit 1
-fi
-
-exit 0
+update_docs rust x86_64-unknown-linux-gnu	gs://stdrs-dev-docs/nightly
+update_docs rust x86_64-pc-windows-gnu		gs://stdrs-dev-docs/nightly
+update_docs rust x86_64-apple-darwin		gs://stdrs-dev-docs/nightly
