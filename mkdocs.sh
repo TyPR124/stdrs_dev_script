@@ -105,8 +105,8 @@ fi
 
 # Update rustc, install necessary components and toolchains
 rustup toolchain install nightly --profile minimal -c cargo -c rustc -c rust-docs
-rustup target add x86_64-pc-windows-gnu
 rustup target add x86_64-unknown-linux-gnu
+rustup target add x86_64-pc-windows-gnu
 rustup target add x86_64-apple-darwin
 
 # Determine the commit-hash of this nightly rustc
@@ -126,7 +126,7 @@ git submodule update --init --recursive --force
 popd
 
 # Sync static root content (NOTE: do NOT enable -r with -d)
-gsutil -q rsync -d -C static_root/ gs://stdrs-dev-docs
+gsutil -q rsync -d -C $SELF_DIR/static_root/ gs://stdrs-dev-docs
 
 update_docs rust x86_64-unknown-linux-gnu	gs://stdrs-dev-docs/nightly
 update_docs rust x86_64-pc-windows-gnu		gs://stdrs-dev-docs/nightly
