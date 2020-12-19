@@ -46,6 +46,11 @@ update_docs() {
 	fi
 	SELF_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+	# Force docs to be updated always
+	set +e
+	rm -rf $rust/target/$target
+	set -e
+
 	echo "Began documenting ${target} at `date -u`"
 	RDF_UNSTABLE="-Z unstable-options --document-hidden-items"
 	# Note: SELF_DIR is expected to be assigned before update_docs() is called
