@@ -69,14 +69,27 @@ async function on_target_change() {
             window.location.href = new_url;
             return;
         }
-        new_url = url_pop_part(new_url);
+        let { url: bare, args } = url_pop_args(new_url);
+        new_url = url_pop_part(bare) + "/index.html" + args;
     }
     // Fallback to /std/index.html
     window.location.href = "/nightly/" + new_target + "/std/index.html";
 }
 
 function url_pop_part(url) {
+    url = url.endsWith("/index.html") ? url.substring(0, url.lastIndexOf("/index.html")) : url;
     return url.substring(0, url.lastIndexOf('/'))
+}
+
+function url_pop_args(url) {
+    let qstn = url.indexOf('?');
+    let hash = url.indexOf('#');
+    let sep = qstn >= 0 && hash >= 0 ? Math.min(qstn, hash)
+        : qstn >= 0 ? qstn
+        : hash;
+    let args = sep >= 0 ? url.substring(sep) : "";
+    url = sep >= 0 ? url.substring(0, sep) : url;
+    return { url, args };
 }
 
 function target_os(target) {
