@@ -35,7 +35,7 @@ function init_target_select() {
     // Steeling the class (and therefore style) of location
     target_select.className = location.className;
     target_select.onchange = on_target_change;
-    sidebar.insertBefore(target_select, location);
+    location.parentElement.insertBefore(target_select, location);
 }
 
 function detect_current_target() {
