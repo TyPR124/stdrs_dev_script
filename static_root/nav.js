@@ -36,6 +36,16 @@ function init_target_select() {
     target_select.className = location.className;
     target_select.onchange = on_target_change;
     location.parentElement.insertBefore(target_select, location);
+
+    let disclaimer = document.createElement("div");
+    disclaimer.innerHTML = [
+        '<p>&#9888; Internal Docs &#9888;<br>',
+        'Not Public API<br>',
+        '<a href="https://docs.rs/std" style="color:white;text-decoration:underline;">Official Docs Here</a></p>',
+    ].join("");
+    disclaimer.className = "location";
+    disclaimer.style.cssText = "color:white;background-color:red;font-weight:bold;";
+    target_select.parentElement.insertBefore(disclaimer, target_select);
 }
 
 function detect_current_target() {
