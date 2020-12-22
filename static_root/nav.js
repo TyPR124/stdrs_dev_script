@@ -15,38 +15,6 @@ var os_map = {
     "linux": ["/os/unix/", "/os/linux/"],
     "darwin": ["/os/unix/", "/os/macos/"],
 };
-function init_target_select() {
-    let currently_viewed_target = detect_current_target();
-    let target_select = document.createElement("select");
-    target_select.id = "target_select";
-    for (let key in all_targets) {
-        let option = document.createElement("option");
-        option.value = key;
-        option.text = all_targets[key];
-        if (key == currently_viewed_target) {
-            option.selected = true;
-            window.localStorage.setItem('last_viewed_target', key);
-        }
-        target_select.appendChild(option);
-    }
-
-    let sidebar = document.getElementsByClassName("sidebar")[0];
-    let location = sidebar.getElementsByClassName("location")[0];
-    // Steeling the class (and therefore style) of location
-    target_select.className = location.className;
-    target_select.onchange = on_target_change;
-    location.parentElement.insertBefore(target_select, location);
-
-    let disclaimer = document.createElement("div");
-    disclaimer.innerHTML = [
-        '<p>&#9888; Internal Docs &#9888;<br>',
-        'Not Public API<br>',
-        '<a href="https://docs.rs/std" style="color:white;text-decoration:underline;">Official Docs Here</a></p>',
-    ].join("");
-    disclaimer.className = "location";
-    disclaimer.style.cssText = "color:white;background-color:red;font-weight:bold;";
-    target_select.parentElement.insertBefore(disclaimer, target_select);
-}
 
 function detect_current_target() {
     let url = window.location.href;
@@ -106,4 +74,34 @@ function target_os(target) {
     return target.split('-')[2]
 }
 
-document.addEventListener("DOMContentLoaded", init_target_select);
+document.addEventListener("DOMContentLoaded", () => {
+    let currently_viewed_target = detect_current_target();
+    let target_select = document.createElement("select");
+    target_select.id = "target_select";
+    for (let key in all_targets) {
+        let option = document.createElement("option");
+        option.value = key;
+        option.text = all_targets[key];
+        if (key == currently_viewed_target) {
+            option.selected = true;
+            window.localStorage.setItem('last_viewed_target', key);
+        }
+        target_select.appendChild(option);
+    }
+
+    let sidebar = document.getElementsByClassName("sidebar")[0];
+    let location = sidebar.getElementsByClassName("location")[0];
+    // Steeling the class (and therefore style) of location
+    target_select.className = location.className;
+    target_select.onchange = on_target_change;
+    location.parentElement.insertBefore(target_select, location);
+
+    let disclaimer = document.createElement("div");
+    disclaimer.innerHTML = [
+        '<p>&#9888; Internal Docs &#9888;<br>',
+        'Not Public API<br>',
+        '<a href="https://docs.rs/std" style="color:white;text-decoration:underline;">Official Docs Here</a></p>',
+    ].join("");
+    disclaimer.style.cssText = "color:white;background-color:red;font-weight:bold;text-align:center;word-wrap:break-word;";
+    target_select.parentElement.insertBefore(disclaimer, target_select);
+});
