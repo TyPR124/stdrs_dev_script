@@ -52,7 +52,7 @@ update_docs() {
 	set -e
 
 	echo "Began documenting ${target} at `date -u`"
-	RDF_UNSTABLE="-Z unstable-options --document-hidden-items"
+	RDF_UNSTABLE="-Z unstable-options --document-hidden-items --generate-link-to-definition"
 	# Note: SELF_DIR is expected to be assigned before update_docs() is called
 	RDF_STABLE="--document-private-items --crate-version ${COMMIT_HASH:0:7} --html-in-header ${SELF_DIR}/in-head.html"
 	export RUSTDOCFLAGS="${RDF_STABLE} ${RDF_UNSTABLE}"
