@@ -91,8 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let sidebar = document.getElementsByClassName("sidebar")[0];
     let location = sidebar.getElementsByClassName("location")[0];
-    // Steeling the class (and therefore style) of location
-    target_select.className = location.className;
+    target_select.style.cssText = "width:100%;color:black;text-align:center;";
     target_select.onchange = on_target_change;
     location.parentElement.insertBefore(target_select, location);
 
