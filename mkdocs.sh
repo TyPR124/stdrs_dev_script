@@ -1,138 +1,103 @@
 #!/bin/bash
 
-# Exit immediately on errors (by default)
-set -e
+set -euo pipefail
 
-trap 'pre_exit $? $LINENO $BASH_COMMAND' EXIT
+targets=(x86_64-unknown-linux-gnu x86_64-pc-windows-gnu x86_64-apple-darwin)
+out_dir=html
+rust_dir=rust
+init_only=false
+cargo_log=cargo.log
 
-pre_exit() {
-	#Args
-	local code=$1
-	local last_line=$2
-	local last_cmd=$3
+function print_help() {
+    cat << EOF
+This script generates internal documentation for the nightly version of Rust's
+standard library.
 
-	if [ $code -ne 0 ]; then
-		echo "Ended with error ${code} on line ${last_line}: '${last_cmd}'"
-	fi
-
-	if [[ -n $SHUTDOWN_VM_ZONE && -n $SHUTDOWN_VM_NAME ]]; then
-		gcloud compute instances stop $SHUTDOWN_VM_NAME --async --zone $SHUTDOWN_VM_ZONE
-	fi
+Usage: mkdocs.sh [FLAGS]
+    FLAGS:
+        --init      Only do initialization tasks.
+        --out       Output directory for generated docs. Default: $out_dir
+        --rust-dir  The directory to use for the Rust git repo. Default: $rust_dir
+        --help      Print this help message and exit.
+EOF
 }
 
-update_docs() {
-	# Args:
-	# rust directory
-	local rust=$1
-	# target triple
-	local target=$2
-	# gs://my-bucket/base/dir
-	local gs_base=$3
-
-	# Get last Hash: value from $docs/$target/meta.txt
-	set +e # meta.txt might not exist
-	local LAST_HASH="$(gsutil cat ${gs_base}/${target}/meta.txt | grep Hash: | sed -r -e 's/Hash: ([0-9A-Za-z]+)/\1/')"
-	set -e
-	echo "Last hash was ${LAST_HASH}"
-
-	pushd $rust
-	COMMIT_HASH="$(git rev-parse HEAD)"
-	popd
-	echo "Current hash is ${COMMIT_HASH}"
-	
-	if [ "$LAST_HASH" == "$COMMIT_HASH" ]; then
-		echo "Hash not changed, skipping ${target}"
-		return 0
-	fi
-	SELF_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
-	# Force docs to be updated always
-	set +e
-	rm -rf $rust/target/$target
-	set -e
-
-	echo "Began documenting ${target} at `date -u`"
-	RDF_UNSTABLE="-Z unstable-options --document-hidden-items --generate-link-to-definition"
-	# Note: SELF_DIR is expected to be assigned before update_docs() is called
-	RDF_STABLE="--document-private-items --crate-version ${COMMIT_HASH:0:7} --html-in-header ${SELF_DIR}/in-head.html"
-	export RUSTDOCFLAGS="${RDF_STABLE} ${RDF_UNSTABLE}"
-	cargo +nightly doc --target $target --manifest-path $rust/library/std/Cargo.toml
-	echo "Finished documenting ${target} at `date -u`"
-
-	echo "Beginning sync docs for ${target}"
-	echo "This can take some time..."
-	gsutil -q -m rsync -r -d -C $rust/target/$target/doc $gs_base/$target
-	echo "Finished sync docs for ${target} at `date -u`"
-
-	# Update meta.txt last
-	local NOW=`date -u`
-	printf "Updated: ${NOW}\nHash: ${COMMIT_HASH}" > meta.txt
-	gsutil cp meta.txt $gs_base/$target/meta.txt
-	echo "Updated meta.txt for ${target}"
+function check_prereqs() {
+    which rustup >> /dev/null || {
+        echo 'Please install rustup and try again.'
+        echo 'See https://rustup.rs'
+        echo 'Or just run:'
+        echo "  curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly --profile minimal --component rust-docs"
+        exit 1
+    }
+    which git >> /dev/null || { echo 'Please install git and try again.'; exit 1; }
+    which rg >> /dev/null || { echo 'Please install ripgrep (rg) and try again.'; exit 1; }
 }
 
-# Update self
-SELF_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-pushd $SELF_DIR
-SELF_HASH="$(git rev-parse HEAD)"
-git pull
-SELF_UPDATE_HASH="$(git rev-parse HEAD)"
-popd
-if [ "$SELF_HASH" != "$SELF_UPDATE_HASH" ]; then
-	echo "Current script rev: ${SELF_HASH}"
-	echo "Updated script rev: ${SELF_UPDATE_HASH}"
-	echo "Restarting with updated script"
-	set +e
-	"${BASH_SOURCE[0]}"
-	exit $?
-	set -e # unreachable, but I like the set +/- symmetry
-fi
-echo "Passed script update, running rev: ${SELF_HASH}"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --init)
+            init_only=true
+            shift
+            ;;
+        --out)
+            out_dir="$2"
+            shift; shift
+            ;;
+        --rust-dir)
+            rust_dir="$2"
+            shift; shift
+            ;;
+        --help)
+            print_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown argument '$1'"
+            print_help
+            echo "Unknown argument '$1'"
+            exit 1
+            ;;
+    esac
+done
 
-# Check for or install rustup
-# Assumes that if rustup exists, cargo and rustc exist as well
-set +e
-rustup help > /dev/null
-status=$?
-set -e
-if [ $status -ne 0 ]; then
-	export RUSTUP_HOME=/rustup
-	export CARGO_HOME=/cargo
-	export PATH=/cargo/bin:/rustup/bin:$PATH
-	set +e
-	rustup help > /dev/null
-	status=$?
-	set -e
-	if [ $status -ne 0 ]; then
-		curl -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly --profile minimal
-	fi
-fi
+check_prereqs
 
-# Update rustc, install necessary components and toolchains
 rustup toolchain install nightly --profile minimal -c cargo -c rustc -c rust-docs
-rustup target add x86_64-unknown-linux-gnu
-rustup target add x86_64-pc-windows-gnu
-rustup target add x86_64-apple-darwin
+rustup target add "${targets[@]}"
+rustc_hash="$(rustc +nightly -vV | rg '^commit-hash: (.+)$' --replace '$1')"
 
-# Determine the commit-hash of this nightly rustc
-NIGHTLY_HASH="$(rustc +nightly --version --verbose | grep commit-hash: | sed -r -e 's/commit-hash: ([0-9a-z]+)/\1/')"
-echo "Nightly hash is ${NIGHTLY_HASH}"
+[ -e "$rust_dir" ]      || mkdir -p "$rust_dir"
+[ -d "$rust_dir/.git" ] || git clone https://github.com/rust-lang/rust "$rust_dir"
 
-# Get rust repo, find commit where this rustc was built
-# Ignore clone errors, possibly already cloned
-set +e
-git clone https://github.com/rust-lang/rust
-set -e
-
-pushd rust
+pushd "$rust_dir" > /dev/null
 git fetch --all
-git reset --hard $NIGHTLY_HASH
+git reset --hard "$rustc_hash"
 git submodule update --init --recursive --force
-popd
+popd > /dev/null
 
-# Sync static root content (NOTE: do NOT enable -r with -d)
-gsutil -q rsync -d -C $SELF_DIR/static_root/ gs://stdrs-dev-docs
+if "$init_only"; then exit 0; fi
 
-update_docs rust x86_64-unknown-linux-gnu	gs://stdrs-dev-docs/nightly
-update_docs rust x86_64-pc-windows-gnu		gs://stdrs-dev-docs/nightly
-update_docs rust x86_64-apple-darwin		gs://stdrs-dev-docs/nightly
+html_in_header=$(realpath 'in-head.html')
+rustdoc_unstable_flags=(-Z unstable-options --document-hidden-items --generate-link-to-definition)
+rustdoc_stable_flags=(--document-private-items --crate-version "${rustc_hash:0:7}" --html-in-header "$html_in_header")
+export RUSTDOCFLAGS="${rustdoc_stable_flags[*]} ${rustdoc_unstable_flags[*]}"
+
+for target in "${targets[@]}"; do
+    echo "Building docs for $target"
+    cargo +nightly doc --target "$target" \
+        --manifest-path "$rust_dir"/library/std/Cargo.toml \
+        --target-dir "$rust_dir"/target \
+    > "$cargo_log" 2>&1 || { cat "$cargo_log"; exit 1; }
+done
+echo "Successfully documented all targets."
+echo "Building final output..."
+# :? errors on emtpy or null
+rm -rf "${out_dir:?}"/*
+mkdir -p "$out_dir/nightly"
+cp static_root/* "$out_dir"/
+for target in "${targets[@]}"; do
+    mv "$rust_dir/target/$target/doc" "$out_dir/nightly/$target"
+    printf "Updated: $(date -u)\nHash: %s" "$rustc_hash" > "$out_dir/nightly/$target/meta.txt"
+done
+echo "All done!"
