@@ -6,6 +6,7 @@ targets=(x86_64-unknown-linux-gnu x86_64-pc-windows-gnu x86_64-apple-darwin)
 out_dir=html
 rust_dir=rust
 init_only=false
+clean=false
 cargo_log=cargo.log
 
 function print_help() {
@@ -18,6 +19,7 @@ Usage: mkdocs.sh [FLAGS]
         --init      Only do initialization tasks.
         --out       Output directory for generated docs. Default: $out_dir
         --rust-dir  The directory to use for the Rust git repo. Default: $rust_dir
+        --clean     Remove the Rust target directory after completion
         --help      Print this help message and exit.
 EOF
 }
@@ -43,6 +45,10 @@ while [ $# -gt 0 ]; do
         --out)
             out_dir="$2"
             shift; shift
+            ;;
+        --clean)
+            clean=true
+            shift
             ;;
         --rust-dir)
             rust_dir="$2"
@@ -100,4 +106,5 @@ for target in "${targets[@]}"; do
     mv "$rust_dir/target/$target/doc" "$out_dir/nightly/$target"
     printf "Updated: $(date -u)\nHash: %s" "$rustc_hash" > "$out_dir/nightly/$target/meta.txt"
 done
+if "$clean"; then rm -rf "${rust_dir:?}"/target; fi
 echo "All done!"
