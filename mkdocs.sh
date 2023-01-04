@@ -7,7 +7,6 @@ out_dir=html
 rust_dir=rust
 init_only=false
 clean=false
-cargo_log=cargo.log
 
 function print_help() {
     cat << EOF
@@ -85,7 +84,8 @@ popd > /dev/null
 if "$init_only"; then exit 0; fi
 
 html_in_header=$(realpath 'in-head.html')
-rustdoc_unstable_flags=(-Z unstable-options --document-hidden-items --generate-link-to-definition)
+# --generate-link-to-definition causes errors currently (and has been for a while - need to file an issue and investigate)
+rustdoc_unstable_flags=(-Z unstable-options --document-hidden-items) # --generate-link-to-definition)
 rustdoc_stable_flags=(--document-private-items --crate-version "${rustc_hash:0:7}" --html-in-header "$html_in_header")
 export RUSTDOCFLAGS="${rustdoc_stable_flags[*]} ${rustdoc_unstable_flags[*]}"
 
@@ -94,7 +94,7 @@ for target in "${targets[@]}"; do
     cargo +nightly doc --target "$target" \
         --manifest-path "$rust_dir"/library/std/Cargo.toml \
         --target-dir "$rust_dir"/target \
-    > "$cargo_log" 2>&1 || { cat "$cargo_log"; exit 1; }
+    2>&1 | tee cargo_"$target".log || exit 1
 done
 echo "Successfully documented all targets."
 echo "Building final output..."
