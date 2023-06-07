@@ -92,7 +92,7 @@ export RUSTDOCFLAGS="${rustdoc_stable_flags[*]} ${rustdoc_unstable_flags[*]}"
 for target in "${targets[@]}"; do
     echo "Building docs for $target"
     cargo +nightly doc --target "$target" \
-        --manifest-path "$rust_dir"/library/std/Cargo.toml \
+        --manifest-path "$rust_dir"/library/sysroot/Cargo.toml \
         --target-dir "$rust_dir"/target \
     2>&1 | tee cargo_"$target".log || exit 1
 done
